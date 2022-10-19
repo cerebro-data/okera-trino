@@ -53,11 +53,12 @@ public class RecordServiceColumnHandle implements ColumnHandle {
   public int columnIdx() { return columnIdx; }
 
   public ColumnMetadata metadata() {
-    return ColumnMetadata.builder()
+    ColumnMetadata.Builder builder = ColumnMetadata.builder()
       .setName(columnName)
       .setType(columnType)
-      .setComment(Optional.of(comment))
-      .setHidden(false).build();
+      .setHidden(false);
+    if (comment != null) builder.setComment(Optional.of(comment));
+    return builder.build();
   }
 
   @Override

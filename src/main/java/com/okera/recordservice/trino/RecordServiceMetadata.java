@@ -798,26 +798,16 @@ public class RecordServiceMetadata implements ConnectorMetadata {
     }
 
     List<ColumnMetadata> cols = new ArrayList<ColumnMetadata>();
-    if (schema.nestedCols != null) {
-      for (Schema.ColumnDesc col: schema.nestedCols) {
-        if (!col.hasAccess) continue;
-        cols.add(ColumnMetadata.builder()
-            .setName(col.name)
-            .setType(toTrinoType(col))
-            .setComment(Optional.of(col.comment))
-            .setHidden(false)
-            .build());
-      }
-    } else {
-      for (Schema.ColumnDesc col: schema.cols) {
-        if (!col.hasAccess) continue;
-        cols.add(ColumnMetadata.builder()
-        .setName(col.name)
-        .setType(toTrinoType(col))
-        .setComment(Optional.of(col.comment))
-        .setHidden(false)
-        .build());
-      }
+    List<Schema.ColumnDesc> schema_cols = schema.nestedCols;
+    if (schema_cols == null) schema_cols = schema.cols;
+    for (Schema.ColumnDesc col: schema_cols) {
+      if (!col.hasAccess) continue;
+      ColumnMetadata.Builder builder = ColumnMetadata.builder()
+      .setName(col.name)
+      .setType(toTrinoType(col))
+      .setHidden(false);
+      if (col.comment != null) builder.setComment(Optional.of(col.comment));
+      cols.add(builder.build());
     }
     table.setSchema(cols);
     table.setStats(stats);
