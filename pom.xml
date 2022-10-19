@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <version>2.12.0-SNAPSHOT</version>
+  <groupId>com.okera.recordservice</groupId>
+  <artifactId>recordservice-trino</artifactId>
+  <name>Record Service Trino Connector</name>
+  <description>Record Service Trino Connector</description>
+  <packaging>jar</packaging>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Add a property to control where test output goes. The default value is the
+         default, but adding a property lets it be overridden on the command line
+     -->
+    <test.output.dir>${project.build.directory}/surefire-reports</test.output.dir>
+
+    <bouncycastle.version>1.62</bouncycastle.version>
+    <commons.lang.version>2.6</commons.lang.version>
+    <commons.cli.version>1.4</commons.cli.version>
+    <javax.version>1</javax.version>
+    <trino.version>400</trino.version>
+    <trino.guice.version>4.2.3</trino.guice.version>
+    <trino.guava.version>20.0</trino.guava.version>
+    <trino.airlift.version>219</trino.airlift.version>
+    <slf4j.version>1.7.28</slf4j.version>
+    <zstd1_4.version>1.4.4-3</zstd1_4.version>
+
+    <!-- Plugin versions -->
+    <checkstyle.version>8.23</checkstyle.version>
+    <checkstyle.plugin.version>3.1.0</checkstyle.plugin.version>
+    <plugin.compiler.version>3.8.1</plugin.compiler.version>
+    <shade.plugin.version>3.1.1</shade.plugin.version>
+    <surefire.plugin.version>2.22.2</surefire.plugin.version>
+
+    <junit.version>4.12</junit.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.okera.recordservice</groupId>
+      <artifactId>recordservice-core</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>${commons.lang.version}</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.trino</groupId>
+      <artifactId>trino-spi</artifactId>
+      <version>${trino.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.airlift</groupId>
+      <artifactId>bootstrap</artifactId>
+      <version>${trino.airlift.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.airlift</groupId>
+      <artifactId>concurrent</artifactId>
+      <version>${trino.airlift.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.airlift</groupId>
+      <artifactId>json</artifactId>
+      <version>${trino.airlift.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.airlift</groupId>
+      <artifactId>log</artifactId>
+      <version>${trino.airlift.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.airlift</groupId>
+      <artifactId>units</artifactId>
+      <version>1.6</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${trino.guava.version}</version>
+    </dependency>
+
+     <dependency>
+      <groupId>com.google.inject</groupId>
+      <artifactId>guice</artifactId>
+      <version>${trino.guice.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.github.luben</groupId>
+      <artifactId>zstd-jni</artifactId>
+      <version>${zstd1_4.version}</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>javax.inject</groupId>
+      <artifactId>javax.inject</artifactId>
+      <version>${javax.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>    
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <appendAssemblyId>false</appendAssemblyId>
+          <descriptors>
+              <descriptor>src/main/assembly/plugin.xml</descriptor>
+          </descriptors>
+
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>${shade.plugin.version}</version>
+        <executions>
+          <execution>
+            <configuration>
+              <artifactSet>
+                <includes>
+                  <include>com.okera.recordservice:recordservice-core</include>
+                  <include>commons-codec:commons-codec</include>
+                  <include>commons-lang:commons-lang</include>
+                  <include>commons-logging:commons-logging</include>
+                  <include>io.airlift:bootstrap</include>
+                  <include>io.airlift:json</include>
+                  <include>io.airlift:log</include>
+                </includes>
+              </artifactSet>
+              <relocation>
+                <pattern>org.apache.commons</pattern>
+                <shadedPattern>com.okera.recordservice.shade.apache.commons</shadedPattern>
+              </relocation>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${plugin.compiler.version}</version>
+        <configuration>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+          <!-- Trino requires java 17.0.3+ - https://trino.io/docs/current/installation/deployment.html#java-runtime-environment -->
+          <release>17</release>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire.plugin.version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${checkstyle.plugin.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+  <repositories>
+    <repository>
+      <id>mvn-central</id>
+      <url>https://repo1.maven.org/maven2/</url>
+    </repository>
+  </repositories>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>Maven repository</id>
+      <url>https://repo1.maven.org/maven2/</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+    </pluginRepository>
+  </pluginRepositories>
+</project>
