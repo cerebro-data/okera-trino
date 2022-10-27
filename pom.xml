@@ -22,7 +22,7 @@
   <modelVersion>4.0.0</modelVersion>
   <version>2.12.0-SNAPSHOT</version>
   <groupId>com.okera.recordservice</groupId>
-  <artifactId>recordservice-trino</artifactId>
+  <artifactId>recordservice-trino-388</artifactId>
   <name>Record Service Trino Connector</name>
   <description>Record Service Trino Connector</description>
   <packaging>jar</packaging>
@@ -38,10 +38,10 @@
     <commons.lang.version>2.6</commons.lang.version>
     <commons.cli.version>1.4</commons.cli.version>
     <javax.version>1</javax.version>
-    <trino.version>400</trino.version>
+    <trino.version>388</trino.version>
     <trino.guice.version>4.2.3</trino.guice.version>
     <trino.guava.version>20.0</trino.guava.version>
-    <trino.airlift.version>219</trino.airlift.version>
+    <trino.airlift.version>217</trino.airlift.version>
     <slf4j.version>1.7.28</slf4j.version>
     <zstd1_4.version>1.4.4-3</zstd1_4.version>
 
@@ -200,8 +200,8 @@
         <configuration>
           <source>${java.version}</source>
           <target>${java.version}</target>
-          <!-- Trino requires java 17.0.3+ - https://trino.io/docs/current/installation/deployment.html#java-runtime-environment -->
-          <release>17</release>
+          <!-- Trino 393+ requires java 17.0.3+ - https://trino.io/docs/current/installation/deployment.html#java-runtime-environment -->
+          <release>11</release>
         </configuration>
       </plugin>
       <plugin>
