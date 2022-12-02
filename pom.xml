@@ -34,6 +34,7 @@
      -->
     <test.output.dir>${project.build.directory}/surefire-reports</test.output.dir>
 
+    <java.version>11</java.version>
     <bouncycastle.version>1.62</bouncycastle.version>
     <commons.lang.version>2.6</commons.lang.version>
     <commons.cli.version>1.4</commons.cli.version>
