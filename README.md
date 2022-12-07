@@ -29,7 +29,9 @@ $ tar -zxvf trino-server-400.tar.gz
 $ cd trino-server-400
 ```
 
-Copy the JAR into the Trino directory.
+Follow the guide [here](https://trino.io/docs/current/installation/deployment.html) to set up Trino with the basic configuration and properties files for a local test installation.
+
+Then, copy the JAR into the Trino directory.
 Set `$PROJECT_HOME` to where you build the connector above:
 
 ```
@@ -52,6 +54,11 @@ Start Trino:
 ```
 $ bin/launcher run
 ```
+
+Notes:
+- The `launcher` script requires Python.
+  For example, install it in Ubuntu like so: `sudo apt install python3 python-is-python3`
+- Set the Java version used by Trino using, for instance: `update-alternatives --config java`
 
 ## Configuration in EMR
 
