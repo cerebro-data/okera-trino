@@ -285,12 +285,23 @@ public class RecordServiceConfig {
     // the list of session properties maintained in the presto layer ir empty. This
     // may be a bug.
     // In this case, fall through to the code path to determine the correct token.
-    String sessionToken;
+    LOG.info("Session: " + session);
+    LOG.info("Session Identity: " + session.getIdentity());
+    String sessionToken = null;
     try {
       sessionToken = session.getProperty(
           RecordServiceSessionProperties.ACCESS_TOKEN, String.class);
     } catch (TrinoException e) {
-      sessionToken = null;
+      LOG.debug("Failed to get token from session properties.");
+    }
+    // try extra credentials "token" as well
+    if (sessionToken == null) {
+      try {
+        sessionToken = session.getIdentity().getExtraCredentials().get(
+            RecordServiceSessionProperties.ACCESS_TOKEN);
+      } catch (Exception e) {
+        LOG.debug("Failed to get token from extra credentials.");
+      }  
     }
     if (StringUtils.isNotEmpty(sessionToken)) {
       LOG.info("Session token found: " + TokenUtil.printableTokenString(sessionToken));
