@@ -295,8 +295,6 @@ public class RecordServiceConfig {
     // the list of session properties maintained in the presto layer ir empty. This
     // may be a bug.
     // In this case, fall through to the code path to determine the correct token.
-    LOG.info("Session: " + session);
-    LOG.info("Session Identity: " + session.getIdentity());
     String sessionToken = null;
     try {
       sessionToken = session.getProperty(

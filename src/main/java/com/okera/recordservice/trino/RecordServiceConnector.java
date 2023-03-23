@@ -16,7 +16,6 @@ import static java.util.Objects.requireNonNull;
 
 import io.airlift.bootstrap.LifeCycleManager;
 import io.airlift.log.Logger;
-import io.airlift.log.Logging;
 import io.trino.spi.NodeManager;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorMetadata;
@@ -45,8 +44,6 @@ public class RecordServiceConnector implements Connector {
       RecordServiceConfig config,
       RecordServiceSessionProperties sessionProperties,
       RecordServicePageSourceProvider pageSourceProvider) {
-    Logging logging = Logging.initialize();
-    logging.setLevel("org.eclipse.jetty.server", io.airlift.log.Level.DEBUG);
     this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
     this.metadata = requireNonNull(metadata, "RecordService metadata is null");
     this.pageSourceProvider = requireNonNull(pageSourceProvider,
