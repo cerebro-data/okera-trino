@@ -45,6 +45,7 @@ Create a connector properties file in the proper location:
 $ cat okera.properties
 connector.name=okera
 okera.planner.hostports=<PLANNER_HOST>
+# okera.extra-credentials.token.key=sso-token
 
 $ cp okera.properties etc/catalog
 ```

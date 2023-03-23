@@ -79,6 +79,8 @@ public class RecordServiceConfig {
   private boolean forceWorkerAuth = false;
   private boolean enablePlannerSSL = false;
   private boolean enableWorkerSSL = false;
+  private String extraCredentialsTokenKey = 
+      RecordServiceSessionProperties.ACCESS_TOKEN;
 
 
   @NotNull
@@ -126,6 +128,7 @@ public class RecordServiceConfig {
   public boolean isForceWorkerAuth() { return forceWorkerAuth; }
   public boolean isPlannerSSL() { return enablePlannerSSL; }
   public boolean isWorkerSSL() { return enableWorkerSSL; }
+  public String getExtraCredentialsTokenKey() { return extraCredentialsTokenKey; }
 
   @Config("okera.planner.hostports")
   public RecordServiceConfig setHostPorts(String hostports) {
@@ -261,6 +264,13 @@ public class RecordServiceConfig {
     return this;
   }
 
+  @Config("okera.extra-credentials.token.key")
+  public RecordServiceConfig setExtraCredentialsTokenKey(String v) {
+    this.extraCredentialsTokenKey = v;
+    LOG.info("Setting extra-credentials token key to: " + v);
+    return this;
+  }
+
   @NotNull
   public String getServiceName() { return serviceName; }
   public String getToken() { return token; }
@@ -295,10 +305,10 @@ public class RecordServiceConfig {
       LOG.debug("Failed to get token from session properties.");
     }
     // try extra credentials "token" as well
-    if (sessionToken == null) {
+    if (sessionToken == null && extraCredentialsTokenKey != null) {
       try {
         sessionToken = session.getIdentity().getExtraCredentials().get(
-            RecordServiceSessionProperties.ACCESS_TOKEN);
+            extraCredentialsTokenKey);
       } catch (Exception e) {
         LOG.debug("Failed to get token from extra credentials.");
       }  
