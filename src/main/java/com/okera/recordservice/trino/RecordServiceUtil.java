@@ -254,7 +254,7 @@ public class RecordServiceUtil {
           }
           break;
         case TIMESTAMP_NANOS:
-          TimestampType.TIMESTAMP_MILLIS.writeLong(builder,
+          TimestampType.TIMESTAMP_NANOS.writeLong(builder,
               array.nextTimestampNanos().getMillisSinceEpoch() * TIMESTAMP_SCALE_FACTOR);
           break;
 
@@ -363,7 +363,7 @@ public class RecordServiceUtil {
           }
           break;
         case TIMESTAMP_NANOS:
-          TimestampType.TIMESTAMP_MILLIS.writeLong(singleMapBuild,
+          TimestampType.TIMESTAMP_NANOS.writeLong(singleMapBuild,
               map.nextTimestampNanosValue().getMillisSinceEpoch() * TIMESTAMP_SCALE_FACTOR);
           break;
 
@@ -463,7 +463,7 @@ public class RecordServiceUtil {
           }
           break;
         case TIMESTAMP_NANOS:
-          TimestampType.TIMESTAMP_MILLIS.writeLong(builder,
+          TimestampType.TIMESTAMP_NANOS.writeLong(builder,
               record.nextTimestampNanos(i).getMillisSinceEpoch() * TIMESTAMP_SCALE_FACTOR);
           break;
 

@@ -666,13 +666,29 @@ public class RecordServiceMetadata implements ConnectorMetadata {
     if (DateType.DATE.equals(type)) {
       return "DATE";
     }
-    if (TimestampType.TIMESTAMP_MILLIS.equals(type)) { // TODO: What about the other TIMESTAMP_XXXXX?
+
+    // public static final TimestampType TIMESTAMP_SECONDS = createTimestampType(0);
+    // public static final TimestampType TIMESTAMP_MILLIS = createTimestampType(3);
+    // public static final TimestampType TIMESTAMP_MICROS = createTimestampType(6);
+    // public static final TimestampType TIMESTAMP_NANOS = createTimestampType(9);
+    // public static final TimestampType TIMESTAMP_PICOS = createTimestampType(12);
+
+    if (TimestampType.TIMESTAMP_MILLIS.equals(type)) {
       return "TIMESTAMP_NANOS";
     }
     if (TimestampType.TIMESTAMP_MILLIS.getTypeId().equals(type)) { // TODO: What about the other TIMESTAMP_XXXXX?
       return "TIMESTAMP_NANOS";
     }
+    if (TimestampType.TIMESTAMP_NANOS.equals(type)) {
+      return "TIMESTAMP_NANOS";
+    }
+    if (TimestampType.TIMESTAMP_NANOS.getTypeId().equals(type)) { 
+      return "TIMESTAMP_NANOS";
+    }
     if (TimestampWithTimeZoneType.TIMESTAMP_TZ_MILLIS.getTypeId().equals(type)) { // TODO: What about the other TIMESTAMP_XXXXX?
+      return "TIMESTAMP_NANOS";
+    }
+    if (TimestampWithTimeZoneType.TIMESTAMP_TZ_NANOS.getTypeId().equals(type)) { 
       return "TIMESTAMP_NANOS";
     }
     if (type instanceof DecimalType) {
