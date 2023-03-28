@@ -17,6 +17,7 @@ import io.trino.spi.TrinoException;
 import io.trino.spi.block.Block;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.block.ByteArrayBlock;
+import io.trino.spi.block.Int96ArrayBlock;
 import io.trino.spi.block.IntArrayBlock;
 import io.trino.spi.block.LongArrayBlock;
 import io.trino.spi.block.PageBuilderStatus;
@@ -111,7 +112,7 @@ public class RecordServicePageSource implements ConnectorPageSource {
       return new Page(blocks);
     } catch (IOException | RecordServiceException e) {
       exceptionHandler(new TrinoException(GENERIC_INTERNAL_ERROR,
-          "Unable to get next page. records.\n" + e.getMessage(), e));
+          "Unable to get next page records.\n" + e.getMessage(), e));
       close();
       return null;
     }
@@ -351,18 +352,19 @@ public class RecordServicePageSource implements ConnectorPageSource {
       }
 
       case TIMESTAMP_NANOS: {
-        final long[] v = new long[numValues];
+        final long[] vh = new long[numValues];
+        final int[] vl = new int[numValues];
         for (int i = 0; i < numValues; ++i) {
           if (containsNulls && nulls[i]) continue;
           // Starting in Presto 339 this is now in epoch micros
-          v[i] = Records.unsafe.getLong(srcArray, srcOffset) * RecordServiceUtil.TIMESTAMP_SCALE_FACTOR;
-          // 8 bytes for the micros we're reading and 4 bytes for nanos
-          // that we just drop
-          srcOffset += 12;
+          vh[i] = Records.unsafe.getLong(srcArray, srcOffset) * RecordServiceUtil.TIMESTAMP_SCALE_FACTOR;
+          srcOffset += 8;
+          vl[i] = Records.unsafe.getInt(srcArray, srcOffset);
+          srcOffset += 4;
         }
         record.setUnderlyingArrayOffset(col, srcOffset);
-        return new LongArrayBlock(numValues,
-            containsNulls ? Optional.of(nulls) : Optional.empty(), v);
+        return new Int96ArrayBlock(numValues,
+            containsNulls ? Optional.of(nulls) : Optional.empty(), vh, vl);
       }
 
       default:
