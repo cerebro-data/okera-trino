@@ -137,6 +137,7 @@ public class RecordServiceSplitManagerImpl {
         Request request, RecordServiceConfig config, long limit) {
       PlanRequestResult plan;
       String token;
+      LOG.debug("Request: " + request);
       try (SetThreadName ignored = new SetThreadName("Query-%s", session.getQueryId());
           RecordServicePlannerClient planner = config.getPlanner(session, nodeManager)) {
         plan = planner.planRequest(request, (config.getLocalWorkerPort() > 0),

@@ -25,12 +25,14 @@ import io.trino.spi.statistics.TableStatistics;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 public class RecordServiceTableHandle implements ConnectorTableHandle {
   private final SchemaTableName schemaTableName;
   private final TupleDomain<ColumnHandle> constraint;
   private final Optional<List<ColumnHandle>> desiredColumns;
   private final boolean isDeleteHandle;
+  private final OptionalLong limit;
 
   // Cache of the schema for this table. Populated lazily.
   private List<ColumnMetadata> schema;
@@ -43,16 +45,18 @@ public class RecordServiceTableHandle implements ConnectorTableHandle {
       @JsonProperty("schemaTableName") SchemaTableName schemaTableName,
       @JsonProperty("constraint") TupleDomain<ColumnHandle> constraint,
       @JsonProperty("desiredColumns") Optional<List<ColumnHandle>> desiredColumns,
-      @JsonProperty("isDeleteHandle") boolean isDeleteHandle) {
+      @JsonProperty("isDeleteHandle") boolean isDeleteHandle,
+      @JsonProperty("limit") OptionalLong limit) {
     this.schemaTableName = schemaTableName;
     this.constraint = constraint;
     this.desiredColumns = desiredColumns;
     this.isDeleteHandle = isDeleteHandle;
+    this.limit = limit;
   }
 
   @JsonProperty
-  public SchemaTableName getSchemaTableName() { 
-    return schemaTableName; 
+  public SchemaTableName getSchemaTableName() {
+    return schemaTableName;
   }
 
   @JsonProperty
@@ -70,9 +74,18 @@ public class RecordServiceTableHandle implements ConnectorTableHandle {
       return isDeleteHandle;
   }
 
-  public List<ColumnMetadata> getSchema() { return schema; }
+  @JsonProperty
+  public OptionalLong getLimit() {
+    return limit;
+  }
 
-  public TableStatistics getStats() { return stats; }
+  public List<ColumnMetadata> getSchema() {
+    return schema;
+  }
+
+  public TableStatistics getStats() {
+    return stats;
+  }
 
   public void setSchema(List<ColumnMetadata> schema) {
     this.schema = schema;

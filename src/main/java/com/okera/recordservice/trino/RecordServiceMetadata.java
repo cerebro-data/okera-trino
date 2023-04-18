@@ -32,6 +32,7 @@ import com.okera.recordservice.util.ParseUtil;
 import io.airlift.log.Logger;
 
 import io.trino.spi.TrinoException;
+import io.trino.spi.connector.Assignment;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.ConnectorMetadata;
@@ -39,7 +40,12 @@ import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTableMetadata;
 import io.trino.spi.connector.ConnectorViewDefinition;
+import io.trino.spi.connector.Constraint;
+import io.trino.spi.connector.ConstraintApplicationResult;
+import io.trino.spi.connector.LimitApplicationResult;
+import io.trino.spi.connector.ProjectionApplicationResult;
 import io.trino.spi.connector.ConnectorViewDefinition.ViewColumn;
+import io.trino.spi.expression.ConnectorExpression;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.connector.SchemaTablePrefix;
@@ -73,6 +79,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
+
 import javax.inject.Inject;
 
 import org.apache.commons.lang.StringEscapeUtils;
@@ -160,12 +168,76 @@ public class RecordServiceMetadata implements ConnectorMetadata {
   }
 
   //
+  // Apply APIs
+  //
+
+  @Override
+  public Optional<ConstraintApplicationResult<ConnectorTableHandle>> applyFilter(ConnectorSession session,
+      ConnectorTableHandle handle, Constraint constraint) {
+    LOG.debug("applyFilter: " + constraint);
+    RecordServiceTableHandle table = (RecordServiceTableHandle) handle;
+    TupleDomain<ColumnHandle> oldDomain = table.getConstraint();
+    TupleDomain<ColumnHandle> newDomain = oldDomain.intersect(constraint.getSummary());
+    if (oldDomain.equals(newDomain)) {
+      return Optional.empty();
+    }
+    table = new RecordServiceTableHandle(
+      table.getSchemaTableName(),
+      newDomain,
+      table.getDesiredColumns(),
+      table.isDeleteHandle(),
+      table.getLimit());
+    return Optional.of(new ConstraintApplicationResult<>(table, constraint.getSummary(), false));
+  }
+
+  @Override
+  public Optional<LimitApplicationResult<ConnectorTableHandle>> applyLimit(ConnectorSession session,
+      ConnectorTableHandle handle, long limit) {
+    LOG.debug("applyLimit: " + limit);
+    RecordServiceTableHandle table = (RecordServiceTableHandle) handle;
+    if (table.getLimit().isPresent() && table.getLimit().getAsLong() <= limit) {
+      return Optional.empty();
+    }
+    table = new RecordServiceTableHandle(
+      table.getSchemaTableName(),
+      table.getConstraint(),
+      table.getDesiredColumns(),
+      table.isDeleteHandle(),
+      OptionalLong.of(limit));
+    return Optional.of(new LimitApplicationResult<>(table, false, false));
+  }
+
+  @Override
+  public Optional<ProjectionApplicationResult<ConnectorTableHandle>> applyProjection(ConnectorSession session,
+      ConnectorTableHandle handle, List<ConnectorExpression> projections, Map<String, ColumnHandle> assignments) {
+    RecordServiceTableHandle table = (RecordServiceTableHandle) handle;
+    LOG.debug("applyProjection: " + projections);
+    if (table.getDesiredColumns().isPresent()) {
+      return Optional.empty();
+    }
+    ImmutableList.Builder<ColumnHandle> desiredColumns = ImmutableList.builder();
+    ImmutableList.Builder<Assignment> assignmentList = ImmutableList.builder();
+    assignments.forEach((name, column) -> {
+        desiredColumns.add(column);
+        assignmentList.add(new Assignment(name, column, 
+          ((RecordServiceColumnHandle) column).columnType()));
+    });
+    table = new RecordServiceTableHandle(
+      table.getSchemaTableName(),
+      table.getConstraint(),
+      Optional.of(desiredColumns.build()),
+      table.isDeleteHandle(),
+      table.getLimit());
+    return Optional.of(new ProjectionApplicationResult<>(table, projections, assignmentList.build(), false));
+  }
+
+  //
   // List APIs
   //
 
   @Override
   public List<String> listSchemaNames(ConnectorSession session) {
-    LOG.info("listSchemaNames()");
+    LOG.debug("listSchemaNames:");
     List<String> results = new ArrayList<String>();
     MetadataCache cache = getOrCreateCache(session);
     try {
@@ -191,7 +263,7 @@ public class RecordServiceMetadata implements ConnectorMetadata {
   @Override
   public List<SchemaTableName> listTables(
       ConnectorSession session, Optional<String> schemaName) {
-    LOG.info("listTables(): schema = " + schemaName);
+    LOG.debug("listTables: schema = " + schemaName);
     final String key = session.getQueryId() + schemaName;
     try {
       return perQueryTableNameCache_.get(key, () -> {
@@ -207,7 +279,7 @@ public class RecordServiceMetadata implements ConnectorMetadata {
   @Override
   public List<SchemaTableName> listViews(ConnectorSession session,
       Optional<String> schemaName) {
-    LOG.info("listViews(): schema = " + schemaName);
+    LOG.debug("listViews: schema = " + schemaName);
     if (disableExternalViews_) return new ArrayList<>();
     final String key = session.getQueryId() + schemaName;
     try {
@@ -230,7 +302,7 @@ public class RecordServiceMetadata implements ConnectorMetadata {
   public Map<SchemaTableName, List<ColumnMetadata>> listTableColumns(
       ConnectorSession session, SchemaTablePrefix prefix) {
     // TODO: this is not right. Not sure why prefix is implemented this way.
-    LOG.info("listTableColumns: " + prefix.getSchema() + " " + prefix.getTable());
+    LOG.debug("listTableColumns: " + prefix.getSchema() + " " + prefix.getTable());
     boolean isAllSchemas = false;
 
     List<String> schemas = new ArrayList<String>();
@@ -288,7 +360,7 @@ public class RecordServiceMetadata implements ConnectorMetadata {
   @Override
   public void createView(ConnectorSession session, SchemaTableName name,
       ConnectorViewDefinition viewMetadata, boolean replace) {
-    LOG.info("createView(): view = " + viewMetadata);
+    LOG.debug("createView: view = " + viewMetadata);
 
     // We have to convert the original view types into Okera types
     // and create a column definition list.
@@ -328,10 +400,10 @@ public class RecordServiceMetadata implements ConnectorMetadata {
           escapedSql
       );
 
-      LOG.info("Creating view with the following DDL:\n" + viewDef);
+      LOG.debug("Creating view with the following DDL:\n" + viewDef);
       try (RecordServicePlannerClient planner = config.getPlanner(session)) {
         if (replace) {
-          LOG.info("Dropping view as `REPLACE` was specified: " + qualifiedViewName);
+          LOG.debug("Dropping view as `REPLACE` was specified: " + qualifiedViewName);
           planner.executeDdl("DROP VIEW IF EXISTS " + qualifiedViewName);
         }
 
@@ -350,7 +422,7 @@ public class RecordServiceMetadata implements ConnectorMetadata {
 
   @Override
   public void dropView(ConnectorSession session, SchemaTableName viewName) {
-    LOG.info("dropView(): view = " + viewName);
+    LOG.debug("dropView: view = " + viewName);
     try {
       String qualifiedViewName = String.format("`%s`.`%s`",
           viewName.getSchemaName(),
@@ -376,6 +448,7 @@ public class RecordServiceMetadata implements ConnectorMetadata {
 
   @Override
   public Optional<ConnectorViewDefinition> getView(ConnectorSession session, SchemaTableName viewName) {
+    LOG.debug("getView: " + viewName);
     // TODO: make this more efficient
     Map<SchemaTableName, ConnectorViewDefinition> views = getViews(session, Optional.of(viewName.getSchemaName()));
     ConnectorViewDefinition view = views.get(viewName);
@@ -392,7 +465,7 @@ public class RecordServiceMetadata implements ConnectorMetadata {
   @Override
   public Map<SchemaTableName, ConnectorViewDefinition> getViews(ConnectorSession session,
       Optional<String> schemaName) {
-    LOG.info("Calling getViews: " + schemaName);
+    LOG.debug("getViews: " + schemaName);
     Map<SchemaTableName, ConnectorViewDefinition> result = new HashMap<>();
     if (disableExternalViews_)  {
       return result;
@@ -446,15 +519,17 @@ public class RecordServiceMetadata implements ConnectorMetadata {
   @Override
   public ConnectorTableHandle getTableHandle(
       ConnectorSession session, SchemaTableName tableName) {
+    LOG.info("getTableHandle(): " + tableName);
     return new RecordServiceTableHandle(
-        tableName, TupleDomain.all(), Optional.empty(), false);
+        tableName, TupleDomain.all(), Optional.empty(),
+        false, OptionalLong.empty());
   }
 
   @Override
   public ConnectorTableMetadata getTableMetadata(
       ConnectorSession session, ConnectorTableHandle table) {
     RecordServiceTableHandle handle = (RecordServiceTableHandle) table;
-    LOG.info("getTableMetadata: " + handle);
+    LOG.debug("getTableMetadata: " + handle);
     return new ConnectorTableMetadata(
         handle.getSchemaTableName(), getSchema(handle, session));
   }
@@ -463,7 +538,7 @@ public class RecordServiceMetadata implements ConnectorMetadata {
   public Map<String, ColumnHandle> getColumnHandles(ConnectorSession session,
       ConnectorTableHandle table) {
     RecordServiceTableHandle handle = (RecordServiceTableHandle) table;
-    LOG.info("getColumnHandles: " + handle);
+    LOG.debug("getColumnHandles: " + handle);
     List<ColumnMetadata> schema = getSchema(handle, session);
     Map<String, ColumnHandle> results = new HashMap<String, ColumnHandle>();
     for (int i = 0; i < schema.size(); i++) {
@@ -477,7 +552,7 @@ public class RecordServiceMetadata implements ConnectorMetadata {
   @Override
   public ColumnMetadata getColumnMetadata(ConnectorSession session,
       ConnectorTableHandle table, ColumnHandle col) {
-    LOG.info("Calling getColumnMetadata: " + table);
+    LOG.debug("getColumnMetadata: " + table);
     RecordServiceColumnHandle handle = (RecordServiceColumnHandle)col;
     return handle.metadata();
   }
@@ -785,9 +860,10 @@ public class RecordServiceMetadata implements ConnectorMetadata {
    */
   private List<ColumnMetadata> getSchema(
       RecordServiceTableHandle table, ConnectorSession session) {
-    LOG.debug("getSchema(): " + table);
-    if (table.getSchema() != null) return table.getSchema();
-
+    LOG.debug("getSchema: " + table);
+    if (table.getSchema() != null) 
+      return table.getSchema();
+    LOG.debug("getSchema: retrieving schema for table " + table);
     final SchemaTableName name = table.getSchemaTableName();
     Schema schema = null;
     TableStatistics stats = null;
